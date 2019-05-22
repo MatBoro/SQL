@@ -1,0 +1,56 @@
+-- creating progress of rental movies based on dates by month
+
+SELECT * FROM (SELECT DISTINCT
+	   [ActorName] as [Name]
+	  ,[Some_ID] as [ID]
+	  ,[Classification]
+	  ,dis.[Country] as [Country]
+	  ,dis.[User_id]
+	  ,[User_name]
+	  ,dis.[Movie_ID] as [Product_id]
+	  ,dis.[Category] as [Brand]
+	  ,COALESCE(secon.[Rental_1],(SELECT TOP 1 IIF(CAST([Rental_1] as int)>=1,1,0) 
+		from [database].[dbo].[MovieBase] as d WHERE d.[Some_ID] = dis.[Some_ID] 
+		and d.[Movie_ID] = dis.[movie_id] and d.[MonthName] <= dates.[Time_Month] ORDER BY d.[MonthName] DESC)) as [Rental_1]
+	  ,COALESCE(secon.[Rental_2],(SELECT TOP 1 IIF(CAST([Rental_2] as int)>=1,1,0) 
+		from [database].[dbo].[MovieBase] as d WHERE d.[Some_ID] = dis.[Some_ID] 
+		and d.[Movie_ID] = dis.[movie_id] and d.[MonthName] <= dates.[Time_Month] ORDER BY d.[MonthName] DESC)) as [Rental_2]
+	  ,COALESCE(secon.[Rental_3],(SELECT TOP 1 IIF(CAST([Rental_3] as int)>=1,1,0) 
+		from [database].[dbo].[MovieBase] as d WHERE d.[Some_ID] = dis.[Some_ID] 
+		and d.[Movie_ID] = dis.[movie_id] and d.[MonthName] <= dates.[Time_Month] ORDER BY d.[MonthName] DESC)) as [Rental_3]
+	  ,dates.[Time_month] 
+	  FROM [database].[dbo].[MovieBase] as dis
+	  CROSS JOIN [database].[dbo].[Dates_Cycle] as dates
+	  left join (SELECT [Act_Name] as [ActorName]
+					,[Other_ID] as [Some_ID]
+					,[VariableBox] as [Classification]
+					,[Country]
+					,[User_id]
+					,[User_name] 
+					,[Movie_ID] 
+					,[Category] 				
+					,IIF(SUM(CAST([Rental_1] as int))>=1,1,0) as [Rental_1]	
+					,IIF(SUM(CAST([Rental_2] as int))>=1,1,0) as [Rental_2]	
+					,IIF(SUM(CAST([Rental_3] as int))>=1,1,0) as [Rental_3]
+					,[MonthName] 
+					FROM [database].[dbo].[MovieBase]
+					where [Country] in ('US', 'UK') and [MonthName] >= '2018-01' 
+					GROUP BY 
+					 [Act_Name] 
+					,[Other_ID] 
+					,[VariableBox] 
+					,[Country]
+					,[User_id]
+					,[User_name] 
+					,[Movie_ID] 
+					,[Category]
+					,[MonthName]) as secon on dis.[Other_ID] = secon.[ID] and dis.[Country] = secon.[Country] and dis.[Movie_ID] = secon.movie_id and dates.[Time_month] = secon.[MonthName]
+					where dis.[Country] in ('US', 'UK') and dis.[MonthName] >= '2018-01' 
+					and dates.[country] = dis.[Country] and dates.[Time_month] >= '2018-01' 
+					and dates.[Time_month] <= (SELECT MAX([MonthName]) 
+					FROM [database].[dbo].[MovieBase] where [Country] in ('US', 'UK'))) as x 
+					WHERE [Rental_1] IS NOT NULL
+					
+					
+					
+					
